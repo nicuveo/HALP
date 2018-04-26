@@ -14,12 +14,17 @@ import           Text.Parsec.String
 type Vector = [Atom]
 type Value  = [Int]
 
-data Operator = Plus
-              | Minus
-              | Product
-              deriving (Show, Eq)
+data UnaryOperator = Rho
+                   deriving (Show, Eq)
 
-type Operation = (Operator, Vector, Expression)
+data BinaryOperator = Plus
+                    | Minus
+                    | Product
+                    deriving (Show, Eq)
+
+data Operation = B BinaryOperator Vector Expression
+               | U UnaryOperator Expression
+                deriving (Show, Eq)
 
 data Atom = N Int
           | E Expression
@@ -60,18 +65,27 @@ atom = tryAll [ N <$> number
               , E <$> betweenParentheses expr
               ]
 
-operator :: Parser Operator
-operator = tryAll [ symbol "+" >> return Plus
-                  , symbol "-" >> return Minus
-                  , symbol "x" >> return Product
-                  ]
+unOperator :: Parser UnaryOperator
+unOperator = tryAll [ symbol "p" >> return Rho
+                    ]
+
+binOperator :: Parser BinaryOperator
+binOperator = tryAll [ symbol "+" >> return Plus
+                     , symbol "-" >> return Minus
+                     , symbol "x" >> return Product
+                     ]
 
 operation :: Parser Operation
-operation = do
-  opLeft   <- vector
-  binaryOp <- operator
-  opRight  <- expr
-  return (binaryOp, opLeft, opRight)
+operation = tryAll [unOp, binOp]
+  where binOp = do
+          opLeft   <- vector
+          binaryOp <- binOperator
+          opRight  <- expr
+          return $ B binaryOp opLeft opRight
+        unOp = do
+          unaryOp  <- unOperator
+          operand  <- expr
+          return $ U unaryOp operand
 
 expr :: Parser Expression
 expr = tryAll [ fmap O operation
@@ -81,18 +95,22 @@ expr = tryAll [ fmap O operation
 
 -- compute
 
-function :: Operator -> Value -> Value -> Value
-function Plus    = zipWith (+)
-function Minus   = zipWith (-)
-function Product = zipWith (*)
+unFunction :: UnaryOperator -> Value -> Value
+unFunction Rho = pure . length
+
+binFunction :: BinaryOperator -> Value -> Value -> Value
+binFunction Plus    = zipWith (+)
+binFunction Minus   = zipWith (-)
+binFunction Product = zipWith (*)
 
 computeAtom :: Atom -> Int
 computeAtom (N x) = x
 computeAtom (E e) = head $ compute e
 
 compute :: Expression -> Value
-compute (V v) = map computeAtom v
-compute (O (o, l, r)) = function o (compute $ V l) $ compute r
+compute (V v)         = map computeAtom v
+compute (O (U o r))   = unFunction o $ compute r
+compute (O (B o l r)) = binFunction o (compute $ V l) $ compute r
 
 eval :: String -> Value
 eval = compute . parseWith expr
