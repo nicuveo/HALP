@@ -1,0 +1,54 @@
+name:           APL
+version:        0.0.0.0
+author:         Kept anonymous
+build-type:     Simple
+cabal-version:  >= 1.10
+
+library
+  hs-source-dirs:   src
+  exposed-modules:  Lib
+  build-depends:    base >=4.7 && <5
+  default-language: Haskell2010
+  ghc-options:      -Wall
+                    -Wcompat
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wredundant-constraints
+                    -fno-warn-type-defaults
+                    -fno-warn-unused-do-bind
+                    -fwarn-tabs
+                    -O2 -threaded -rtsopts -with-rtsopts=-N
+
+executable APL-exe
+  main-is:          Main.hs
+  hs-source-dirs:   app
+  default-language: Haskell2010
+  ghc-options:      -Wall
+                    -Wcompat
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wredundant-constraints
+                    -fno-warn-type-defaults
+                    -fno-warn-unused-do-bind
+                    -fwarn-tabs
+                    -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:    APL,
+                    base >=4.7 && <5,
+                    parsec
+
+test-suite APL-test
+  type:             exitcode-stdio-1.0
+  main-is:          Tests.hs
+  hs-source-dirs:   test
+  default-language: Haskell2010
+  ghc-options:      -Wall
+                    -Wcompat
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wredundant-constraints
+                    -fno-warn-type-defaults
+                    -fno-warn-unused-do-bind
+                    -fwarn-tabs
+                    -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:    APL,
+                    base >=4.7 && <5
