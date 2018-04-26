@@ -11,7 +11,8 @@ import           Text.Parsec.String
 
 -- types
 
-type Vector = [Int]
+type Vector = [Atom]
+type Value  = [Int]
 
 data Operator = Plus
               | Minus
@@ -19,6 +20,10 @@ data Operator = Plus
               deriving (Show, Eq)
 
 type Operation = (Operator, Vector, Expression)
+
+data Atom = N Int
+          | E Expression
+          deriving (Show, Eq)
 
 data Expression = V Vector
                 | O Operation
@@ -34,6 +39,9 @@ tryAll parsers = foldl1 (<|>) $ map try parsers
 betweenSpaces :: Parser a -> Parser a
 betweenSpaces p = spaces *> p <* spaces
 
+betweenParentheses :: Parser a -> Parser a
+betweenParentheses p = symbol "(" *> p <* symbol ")"
+
 symbol :: String -> Parsec String () String
 symbol s = betweenSpaces $ string s
 
@@ -45,7 +53,12 @@ number :: Parser Int
 number = betweenSpaces $ read <$> many1 digit
 
 vector :: Parser Vector
-vector = betweenSpaces $ number `sepBy1` spaces
+vector = betweenSpaces $ atom `sepBy1` spaces
+
+atom :: Parser Atom
+atom = tryAll [ N <$> number
+              , E <$> betweenParentheses expr
+              ]
 
 operator :: Parser Operator
 operator = tryAll [ symbol "+" >> return Plus
@@ -68,21 +81,28 @@ expr = tryAll [ fmap O operation
 
 -- compute
 
-function :: Operator -> Vector -> Vector -> Vector
+function :: Operator -> Value -> Value -> Value
 function Plus    = zipWith (+)
 function Minus   = zipWith (-)
 function Product = zipWith (*)
 
-compute :: Expression -> Vector
-compute (V v) = v
-compute (O (o, l, r)) = function o l $ compute r
+computeAtom :: Atom -> Int
+computeAtom (N x) = x
+computeAtom (E e) = head $ compute e
 
-eval :: String -> Vector
-eval line = compute $ either (error . show) id $ parse expr "" line
+compute :: Expression -> Value
+compute (V v) = map computeAtom v
+compute (O (o, l, r)) = function o (compute $ V l) $ compute r
+
+eval :: String -> Value
+eval = compute . parseWith expr
 
 
 
 -- main
+
+parseWith :: Parser a -> String -> a
+parseWith p s = either (error . show) id $ parse p "" s
 
 repl :: IO ()
 repl = do
