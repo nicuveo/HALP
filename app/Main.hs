@@ -38,7 +38,7 @@ data Expression = V Vector
 
 -- parser helpers
 
-tryAll :: [Parsec String () a] -> Parsec String () a
+tryAll :: [Parser a] -> Parser a
 tryAll parsers = foldl1 (<|>) $ map try parsers
 
 betweenSpaces :: Parser a -> Parser a
@@ -49,7 +49,7 @@ betweenParentheses = between openParen closeParen
   where openParen  = symbol "("
         closeParen = symbol ")"
 
-symbol :: String -> Parsec String () String
+symbol :: String -> Parser String
 symbol = betweenSpaces . string
 
 
