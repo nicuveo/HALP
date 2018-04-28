@@ -17,7 +17,6 @@ library
                     -fno-warn-type-defaults
                     -fno-warn-unused-do-bind
                     -fwarn-tabs
-                    -O2 -threaded -rtsopts -with-rtsopts=-N
 
 executable APL-exe
   main-is:          Main.hs
